@@ -153,7 +153,7 @@ def batch_convert_files_window():
     convert_window.title("待定")
     
     # 设置窗口大小，格式为 "宽度x高度"
-    convert_window.geometry("400x300")  # 设置为 400px 宽，300px 高
+    convert_window.geometry("200x100")  # 设置为 400px 宽，300px 高
 
     label_convert = tk.Label(convert_window, text="待定")
     label_convert.pack(padx=10, pady=10)
@@ -162,7 +162,7 @@ def batch_convert_files_window():
     button_convert.pack(padx=10, pady=10)
 
 def show_help():
-    messagebox.showinfo("帮助", "这是一个功能集合工具！选择一个功能进行操作。")
+    messagebox.showinfo("帮助", "删除列表文件：一次只能选择并删除一个文件。\n选择需要合并的页签：可以多选。\n备注：请确保各excel的标题行内容一致，没有换序，否则合并后会乱。为了方便，所有内容都会当做文本来处理，需要调整格式的话请在合并后再处理。")
 
 # 创建主窗口
 root = tk.Tk()
@@ -210,7 +210,7 @@ button_delete_file.grid(row=2, column=0, columnspan=2, pady=5)
 frame_sheet = tk.Frame(root)
 frame_sheet.pack(pady=10, padx=10)
 
-label_sheet = tk.Label(frame_sheet, text="选择需要合并的页签：")
+label_sheet = tk.Label(frame_sheet, text="选择需要合并的页签（可多选）：")
 label_sheet.grid(row=0, column=0, padx=5, pady=5)
 
 sheet_name_list = tk.Variable()

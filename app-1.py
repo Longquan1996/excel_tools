@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils import exceptions as openpyxl_exceptions
@@ -25,14 +25,14 @@ def select_folder():
         update_sheet_options()
 
 def delete_file():
-    selected_files = list(file_display.curselection()) # 获取用户选中的文件 index
+    selected_files = list(file_display.curselection()) # index  list
     if not selected_files:
         messagebox.showwarning("警告", "请选择要删除的文件！")
         return
     for selected in selected_files: # index
         file_list.pop(selected)  # 从 file_list 中移除文件
         file_display.delete(selected)  # 从显示区域中移除
-    update_sheet_options()  # 更新工作表选择列表
+    update_sheet_options()  # 更新页签选择列表
 
 def update_sheet_options():
     if not file_list:
@@ -44,7 +44,7 @@ def update_sheet_options():
         wb.close()
         sheet_name_list.set(sheet_names)
     except Exception as e:
-        messagebox.showerror("错误", f"无法读取工作表名称: {e}")
+        messagebox.showerror("错误", f"无法读取页签名称: {e}")
 
 def combine_excel_files():
     if not file_list:
@@ -53,13 +53,15 @@ def combine_excel_files():
 
     selected_sheets = list(sheet_listbox.curselection())
     if not selected_sheets:
-        messagebox.showerror("错误", "请选择至少一个工作表！")
+        messagebox.showerror("错误", "请选择至少一个页签！")
         return
     
     try:
         combined_df = {}
         title_row_dict = {}
 
+        total = len(selected_sheets) * len(file_list)
+        count = 0
         for sheet_idx in selected_sheets:
             sheet_name = sheet_name_list.get()[sheet_idx]
             sheet_data = pd.DataFrame()
@@ -73,7 +75,7 @@ def combine_excel_files():
                             title_row = i + 1
                             break
                     if title_row is None:
-                        raise Exception(f"文件 {file_path} 中工作表 {sheet_name} 没有找到标题行！")
+                        raise Exception(f"文件 {file_path} 中页签 {sheet_name} 没有找到标题行！")
 
                     title_row_dict[sheet_name] = title_row
                     df.columns = range(len(df.columns))
@@ -84,7 +86,9 @@ def combine_excel_files():
                     df = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=title_row_dict[sheet_name]-1, dtype=str)
                     df.columns = range(len(df.columns))
                     sheet_data = pd.concat([sheet_data, df], ignore_index=True, join='outer')
-
+                count += 1
+                progress_bar.config(value=count, maximum=total)
+                root.update_idletasks() # 更新进度条显示
             combined_df[sheet_name] = sheet_data
 
         global combined_data, combined_title_rows
@@ -195,14 +199,14 @@ button_add_file = tk.Button(frame_files, text="添加文件", command=add_file)
 button_add_file.grid(row=0, column=1, padx=5)
 
 # 使用 Listbox 控件来显示文件名
-file_display = tk.Listbox(frame_files, height=10, width=60, font=("Times New Roman", 8))
+file_display = tk.Listbox(frame_files, height=10, width=60, font=("Times New Roman", 8), selectmode=tk.SINGLE)
 file_display.grid(row=1, column=0, columnspan=2, pady=5)
 
 # 添加删除按钮
 button_delete_file = tk.Button(frame_files, text="删除列表文件", command=delete_file)
 button_delete_file.grid(row=2, column=0, columnspan=2, pady=5)
 
-# 工作表选择区域
+# 页签选择区域
 frame_sheet = tk.Frame(root)
 frame_sheet.pack(pady=10, padx=10)
 
@@ -212,6 +216,12 @@ label_sheet.grid(row=0, column=0, padx=5, pady=5)
 sheet_name_list = tk.Variable()
 sheet_listbox = tk.Listbox(frame_sheet, listvariable=sheet_name_list, selectmode=tk.MULTIPLE, height=8, width=40, font=("Times New Roman", 8))
 sheet_listbox.grid(row=1, column=0, padx=5, pady=5)
+
+# 进度条
+progress_bar = ttk.Progressbar(root, length=300, mode="determinate")
+progress_bar.pack(pady=10)
+# progress_bar_in = ttk.Progressbar(root, mode='indeterminate', length=200)
+# progress_bar_in.pack(pady=10)
 
 # 合并和保存按钮
 button_combine = tk.Button(root, text="开始合并", command=combine_excel_files, width=20, bg="lightblue")

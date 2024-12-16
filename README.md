@@ -1,6 +1,6 @@
 # excel_tools
 
-`pyinstaller --additional-hooks-dir=./hooks app.py`   
+`pyinstaller --additional-hooks-dir=./hooks --clean --onefile --windowed app.py`   
 `pyinstaller --hidden-import=openpyxl app.py`   
 `pyinstaller --exclude-module numpy --exclude-module scipy app.py`   
 `--clean` 删除之前生成的构建缓存、临时文件和输出目录中的文件。这可以确保你生成的是一个干净的构建，没有任何残留的旧文件或缓存。   

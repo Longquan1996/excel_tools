@@ -135,7 +135,6 @@ def update_combined_info():
     combined_info = "\n".join(combined_df.keys()) if combined_df else "无"
     combined_info_label.config(text=f"已汇总的页签:\n{combined_info}")
 
-# 创建 Tkinter 窗口
 root = tk.Tk()
 root.title("Excel 汇总工具")
 
@@ -150,17 +149,13 @@ listbox.grid(row=1, column=1, padx=5, pady=5, columnspan=2)
 file_count_label = tk.StringVar(value="共找到 0 个文件")
 tk.Label(root, textvariable=file_count_label).grid(row=2, column=1, sticky="w", padx=5)
 
-# 创建 Listbox 用于显示工作表名称
-listbox_sheet_names = tk.Listbox(root, selectmode=tk.MULTIPLE, height=15)
-select_button = tk.Button(root, text="获取页签名", command=display_sheet_names).grid(row=3, column=1, padx=5, pady=5)
+tk.Label(root, text="页签名:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
+sheet_name = tk.StringVar(value="1、初试")
+tk.Entry(root, textvariable=sheet_name, width=40).grid(row=3, column=1, padx=5, pady=5)
 
-
-# tk.Label(root, text="页签名:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
-selected_indices = listbox_sheet_names.curselection()
-if not selected_indices:
-    messagebox.showwarning("警告", "请选择至少一个工作表")
-selected_sheets = [sheet_names[i] for i in selected_indices]
-# tk.Entry(root, textvariable=sheet_name, width=40).grid(row=3, column=1, padx=5, pady=5)
+tk.Label(root, text="标题行:").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+title_row = tk.StringVar(value="3")
+tk.Entry(root, textvariable=title_row, width=40).grid(row=4, column=1, padx=5, pady=5)
 
 # 状态栏标签
 status_label = tk.Label(root, text="欢迎使用 Excel 汇总工具！", relief="sunken", anchor="w", padx=5, pady=5)

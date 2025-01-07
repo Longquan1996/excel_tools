@@ -146,8 +146,8 @@ def excel_split_window():
     split_window.title("Excel 表格拆分工具")
     
     # 设置窗口大小
-    window_width = 400
-    window_height = 300
+    window_width = 450
+    window_height = 550
 
     # 获取主窗口的位置和大小
     main_x = root.winfo_x()
@@ -175,7 +175,7 @@ def excel_split_window():
     file_split = tk.StringVar()
     file_name_var = tk.StringVar()
     tk.Label(split_window, text="已选择文件:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-    tk.Entry(split_window, textvariable=file_name_var, state="readonly", width=40).grid(row=1, column=1, padx=5, pady=5)
+    tk.Entry(split_window, textvariable=file_name_var, state="readonly", width=40).grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
     tk.Label(split_window, text="请选择页签:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
     select_sheet = ttk.Combobox(split_window, values=[], state="readonly")
@@ -198,14 +198,17 @@ def excel_split_window():
 
     # 绑定一个事件，当选择页签时，更新拆分依据
     select_sheet.bind("<<ComboboxSelected>>", lambda event: update_title_options())
+    title_row = 0
     def update_title_options():
+        nonlocal title_row
+        title_row = 0
         file_path = file_split.get()
         sheet_name = select_sheet.get()
         if not file_path or not sheet_name:
             return
         try:
             df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
-            title_row = 0
+            # title_row = 0
             max_count = max([df.iloc[i].notnull().sum() for i in range(4)])
             for i in range(3,-1,-1):
                 if df.iloc[i].notnull().sum() == max_count:
@@ -216,13 +219,13 @@ def excel_split_window():
         except Exception as e:
             messagebox.showerror("错误", f"无法读取文件: {e}")
 
-    mode = tk.IntVar(value=0)
-    tk.Radiobutton(split_window, text="拆分为多个文件", variable=mode, value=1).grid(row=4, column=0, padx=5, pady=5, sticky="w")
-    tk.Radiobutton(split_window, text="拆分为多个页签", variable=mode, value=2).grid(row=4, column=1, padx=5, pady=5, sticky="w")
-    # tk.Label(split_window, textvariable=mode).grid(row=4, column=0, padx=5, pady=5, sticky="e")
-
     # 拆分操作
+    catagory_df = {}
+    catagory_count = tk.IntVar(value=0)
+    catagory_tk = tk.StringVar()
+    catagory = []
     def split_excel():
+        nonlocal catagory_df, catagory
         file_path = file_split.get()
         if not file_path:
             messagebox.showwarning("警告", "请选择要拆分的文件！")
@@ -232,22 +235,65 @@ def excel_split_window():
         if not sheet_name:
             messagebox.showwarning("警告", "请选择要拆分的工作表！")
             return
-
-        if mode.get() == 0:
-            messagebox.showwarning("警告", "请选择拆分模式！")
+        
+        select_title_name = select_title.get()
+        if not select_title_name:
+            messagebox.showwarning("警告", "请选择拆分依据！")
             return
 
         try:
-            df = pd.read_excel(file_path, sheet_name=sheet_name)
-            if mode.get() == 1: # 拆分为多个文件
-                pass
-            elif mode.get() == 2: # 拆分为多个页签
-                pass
+            df = pd.read_excel(file_path, sheet_name=sheet_name, header=title_row, dtype=str)
+            catagory = df[select_title_name].unique()
+            catagory_tk.set(catagory)
+            catagory_df = {}
+            for i in catagory:
+                catagory_df[i] = df[df[select_title_name] == i]
+            catagory_count.set(len(catagory_df))
         except Exception as e:
             messagebox.showerror("拆分错误", str(e))
-    tk.Button(split_window, text="开始拆分", command=split_excel).grid(row=5, column=0, columnspan=2, pady=10)
+    tk.Button(split_window, text="开始拆分", command=split_excel).grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
-    # tk.Button(split_window, text="另保存", command=split_excel).grid(row=3, column=0, columnspan=2, pady=10)
+    # 显示拆分简要信息
+    tk.Label(split_window, text="拆分数量:").grid(row=5, column=0, padx=5, pady=5, sticky="e")
+    tk.Entry(split_window, textvariable=catagory_count, state="readonly", width=10).grid(row=5, column=1, padx=5, pady=5, sticky="w")
+    tk.Label(split_window, text="具体:").grid(row=6, column=0, padx=5, pady=5, sticky="e")
+    tk.Label(split_window, textvariable=catagory_tk, relief="sunken", anchor='w', padx=5, pady=5).grid(row=6, column=1, sticky="w")
+    
+    mode = tk.IntVar(value=0)
+    tk.Radiobutton(split_window, text="保存为多个文件", variable=mode, value=1).grid(row=7, column=0, padx=5, pady=5, sticky="w")
+    tk.Radiobutton(split_window, text="保存为多个页签", variable=mode, value=2).grid(row=7, column=1, padx=5, pady=5, sticky="w")
+
+    # 保存拆分结果
+    def save_split_file():
+        if mode.get() == 0:
+            messagebox.showwarning("警告", "请选择保存模式！")
+            return
+        if mode.get() == 1: # 保存为多个文件
+            output_folder = filedialog.askdirectory()
+            if not output_folder:
+                messagebox.showinfo("信息", "您没有选择文件夹，保存操作已取消。")
+                return
+            try:
+                for key, value in catagory_df.items():
+                    output_file = os.path.join(output_folder, f"{key}.xlsx")
+                    value.to_excel(output_file, sheet_name=key, index=False)
+                messagebox.showinfo("完成", f"拆分文件已保存至: {output_folder}")
+            except Exception as e:
+                messagebox.showerror("保存错误", str(e))
+        elif mode.get() == 2: # 保存为多个页签
+            output_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+            if not output_file:
+                messagebox.showinfo("信息", "您没有选择文件，保存操作已取消。")
+                return
+            try:
+                with pd.ExcelWriter(output_file) as writer:
+                    for key, value in catagory_df.items():
+                        value.to_excel(writer, sheet_name=key, index=False)
+                messagebox.showinfo("完成", f"拆分文件已保存为: {output_file}")
+            except Exception as e:
+                messagebox.showerror("保存错误", str(e))
+
+    tk.Button(split_window, text="保存", command=save_split_file).grid(row=8, column=1, columnspan=2, pady=5, padx=5, sticky="w")
 
     split_window.mainloop()
 
